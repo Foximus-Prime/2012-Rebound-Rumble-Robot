@@ -13,6 +13,8 @@ import edu.wpi.first.wpilibj.Jaguar;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.DriverStationLCD;
+import edu.wpi.first.wpilibj.GenericHID.Hand;
+import edu.wpi.first.wpilibj.Victor;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -28,6 +30,13 @@ public class mainRobot extends IterativeRobot {
     Jaguar BR = new Jaguar(3);
     Jaguar FR = new Jaguar(4);
     
+    Victor firstLift = new Victor(5);
+    Victor secondLift = new Victor(6);
+    
+    Victor shooterRot = new Victor(7);
+    Victor shooterT = new Victor(9);
+    Victor shooterB = new Victor(8);
+    Victor arm = new Victor(10);
     
     
     Joystick joy1 = new Joystick(1);
@@ -59,6 +68,25 @@ public class mainRobot extends IterativeRobot {
         //double X2 = 0, Y1 = 0, X1 = 0, threshold = 15.0;
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
+            drive.tankDrive(joy1, joy2);
+            /*
+            if(joy1.getTrigger(Hand.kLeft)) {
+                shooterT.set(joy1.getThrottle());
+                shooterB.set(joy1.getThrottle());
+            } else { shooterT.set(0); shooterB.set(0); }
+            if(joy1.getRawButton(6)) {
+                secondLift.set(joy2.getThrottle());
+            } else {secondLift.set(0);}
+            if(joy1.getRawButton(7)) {
+                firstLift.set(joy2.getThrottle());
+            } else { firstLift.set(0); }
+            if(joy1.getRawButton(8)) {
+                shooterRot.set(.1);
+            } else { shooterRot.set(0); }
+            if(joy1.getRawButton(9)) {
+                shooterRot.set(-.1);
+            } else { shooterRot.set(0); }
+            */
             /*magnitude = joy1.getMagnitude();
             direction = joy1.getDirectionDegrees();
             rotation = joy2.getX();*/
@@ -69,7 +97,7 @@ public class mainRobot extends IterativeRobot {
             
             
             // ... or for two 2-axis joysticks do this (Halo):
-            double forward = -joy1.getY(); // push joystick1 forward to go forward
+            /*double forward = -joy1.getY(); // push joystick1 forward to go forward
             double right = joy1.getX(); // push joystick1 to the right to strafe right
             double clockwise = joy2.getX(); // push joystick2 to the right to rotate clockwise
             
@@ -87,9 +115,9 @@ public class mainRobot extends IterativeRobot {
             clockwise = K*clockwise;
             // OPTIONAL. If desired, use the gyro angle for field-centric control.
             // "theta" is the gyro angle, measured CCW from the zero reference:
-            /*double temp = forward*cos(theta) - right*sin(theta);
+            double temp = forward*cos(theta) - right*sin(theta);
             right = forward*sin(theta) + right*cos(theta);
-            forward = temp;*/
+            forward = temp;
             // Now apply the inverse kinematic tranformation
             // to convert your vehicle motion command
             // to 4 wheel speed commands:
@@ -110,7 +138,7 @@ public class mainRobot extends IterativeRobot {
             BL.set(rear_left);
             FR.set(front_right);
             BR.set(rear_right);
-            
+            */
             
             /*
             magnitude = joy1.getY();
