@@ -25,8 +25,8 @@ import edu.wpi.first.wpilibj.Victor;
  */
 public class mainRobot extends IterativeRobot {
     
-    Jaguar BL = new Jaguar(1);
-    Jaguar FL = new Jaguar(2);
+    /*Jaguar right = new Jaguar(1);
+    Jaguar left = new Jaguar(2);
     Jaguar BR = new Jaguar(3);
     Jaguar FR = new Jaguar(4);
     
@@ -36,13 +36,13 @@ public class mainRobot extends IterativeRobot {
     Victor shooterRot = new Victor(7);
     Victor shooterT = new Victor(9);
     Victor shooterB = new Victor(8);
-    Victor arm = new Victor(10);
+    Victor arm = new Victor(10);*/
     
     
     Joystick joy1 = new Joystick(1);
     Joystick joy2 = new Joystick(2);
     
-    RobotDrive drive = new RobotDrive(FL,BL,FR,BR);
+    RobotDrive drive = new RobotDrive(3,4);
     
     /**
      * This function is run when the robot is first started up and should be
@@ -68,7 +68,8 @@ public class mainRobot extends IterativeRobot {
         //double X2 = 0, Y1 = 0, X1 = 0, threshold = 15.0;
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
-            drive.tankDrive(joy1, joy2);
+            drive.arcadeDrive(joy1);
+            //drive.tankDrive(joy1, joy2);
             /*
             if(joy1.getTrigger(Hand.kLeft)) {
                 shooterT.set(joy1.getThrottle());
