@@ -7,14 +7,17 @@
 
 package org.foximus.prime;
 
+import java.lang.Math.*;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Jaguar;
+import edu.wpi.first.wpilibj.Relay;
 import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.RobotDrive;
 import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Victor;
+import edu.wpi.first.wpilibj.AnalogChannel;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -25,19 +28,62 @@ import edu.wpi.first.wpilibj.Victor;
  */
 public class mainRobot extends IterativeRobot {
     
+    double THETA = 0.8203;  //47 degrees as radians.  Current shooter angle.
+    double G = 9.81;        //g: the gravitational acceleration—usually taken to be 9.81 m/s2 near the Earth's surface
+                            //http://en.wikipedia.org/wiki/Trajectory_of_a_projectile#Notation
+    
+    AnalogChannel ultrasonic = new AnalogChannel(1);
+    AnalogChannel potentiameter = new AnalogChannel(2);
+    
     Victor botPickup = new Victor(5);
     Victor topPickup = new Victor(6);
     
-    Spike shooterRot = new Spike(9);
+    Relay shooterRot = new Relay(1);
     Victor shooterT = new Victor(8);
-    Victor shooterB = new Victor(7);
+    Victor shooterB = new Victor(9);
     
-    Spike arm = new Spike(10);
+    Relay arm = new Relay(2);
     
     Joystick joy1 = new Joystick(1);
     Joystick joy2 = new Joystick(2);
     
     RobotDrive drive = new RobotDrive(3,4);
+    
+    
+    public double getXDistance(){ //currently meters.  METRIC!
+        
+        double d = ultrasonic.getVoltage() / 0.009766;
+        
+        d *= 0.0254; 
+        
+        return d;
+    }
+    public double v0(double x, double y, double theta, double g){
+        
+        double v = 0;
+        
+        v= -4 * ( 2*g*y - 2*g*x*Math.tan(theta)) * (((g*x*Math.tan(theta)) * (g*x*Math.tan(theta))) + g*g*x*x);
+        
+        if(v < 0)
+            return -1;
+        
+        v = Math.sqrt(v) / (2 *(2*y*g - 2*g*x*Math.tan(theta)));
+                
+        return v;
+    }
+    public double v1(double x, double y, double theta, double g){
+        
+        double v = 0;
+        
+        v= -4 * ( 2*g*y - 2*g*x*Math.tan(theta)) * (((g*x*Math.tan(theta)) * (g*x*Math.tan(theta))) + g*g*x*x);
+        
+        if(v < 0)
+            return -1;
+        
+        v = -Math.sqrt(v) / (2 *(2*y*g - 2*g*x*Math.tan(theta)));
+                
+        return v;
+    }
     
     /**
      * This function is run when the robot is first started up and should be
@@ -64,6 +110,29 @@ public class mainRobot extends IterativeRobot {
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
             drive.arcadeDrive(joy1);
+            
+            if(-joy2.getY() > 0.0){
+                shooterT.set(-joy2.getY());
+                shooterB.set(-joy2.getY());
+            }
+            else{
+                shooterT.set(0.0);
+                shooterB.set(0.0);
+            }
+            if(joy2.getRawButton(2))
+                botPickup.set(-.5);
+            else if(joy2.getRawButton(3))
+                botPickup.set(-1.0);
+            else
+                botPickup.set(0);
+            
+            
+            if(joy2.getTrigger())
+                topPickup.set(1);
+            //else if(joy2.getRawButton(3))
+              //  botPickup.set(1.0);
+            else
+                topPickup.set(0);
             
             //drive.tankDrive(joy1, joy2);
             /*
