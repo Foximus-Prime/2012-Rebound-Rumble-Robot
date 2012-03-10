@@ -25,19 +25,14 @@ import edu.wpi.first.wpilibj.Victor;
  */
 public class mainRobot extends IterativeRobot {
     
-    /*Jaguar right = new Jaguar(1);
-    Jaguar left = new Jaguar(2);
-    Jaguar BR = new Jaguar(3);
-    Jaguar FR = new Jaguar(4);
+    Victor botPickup = new Victor(5);
+    Victor topPickup = new Victor(6);
     
-    Victor firstLift = new Victor(5);
-    Victor secondLift = new Victor(6);
+    Spike shooterRot = new Spike(9);
+    Victor shooterT = new Victor(8);
+    Victor shooterB = new Victor(7);
     
-    Victor shooterRot = new Victor(7);
-    Victor shooterT = new Victor(9);
-    Victor shooterB = new Victor(8);
-    Victor arm = new Victor(10);*/
-    
+    Spike arm = new Spike(10);
     
     Joystick joy1 = new Joystick(1);
     Joystick joy2 = new Joystick(2);
@@ -69,6 +64,7 @@ public class mainRobot extends IterativeRobot {
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
             drive.arcadeDrive(joy1);
+            
             //drive.tankDrive(joy1, joy2);
             /*
             if(joy1.getTrigger(Hand.kLeft)) {
@@ -109,9 +105,9 @@ public class mainRobot extends IterativeRobot {
             // note: the above can only do 2 degrees of freedom at a time.
             // Button1 selects Halo or Arcade.
             // ... or any other driver interface scheme you like.
-            // K is a tuning constant for the “rotate” axis sensitivity.
+            // K is a tuning constant for the ï¿½rotateï¿½ axis sensitivity.
             // Start with K=0, and increase it very slowly (do not exceed K=1)
-            // to find the right value after you’ve got fwd/rev and strafe working:
+            // to find the right value after youï¿½ve got fwd/rev and strafe working:
             double K = 0.1;
             clockwise = K*clockwise;
             // OPTIONAL. If desired, use the gyro angle for field-centric control.
