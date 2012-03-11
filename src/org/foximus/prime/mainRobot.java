@@ -7,7 +7,7 @@
 
 package org.foximus.prime;
 
-import java.lang.Math.*;
+import com.sun.squawk.util.MathUtils;
 
 import edu.wpi.first.wpilibj.IterativeRobot;
 import edu.wpi.first.wpilibj.Jaguar;
@@ -28,22 +28,29 @@ import edu.wpi.first.wpilibj.AnalogChannel;
  */
 public class mainRobot extends IterativeRobot {
     
-    double THETA = 0.8203;  //47 degrees as radians.  Current shooter angle.
+    double THETA = Math.toRadians(48);  //48 degrees as radians.  Current shooter angle.
     double G = 9.81;        //g: the gravitational acceleration—usually taken to be 9.81 m/s2 near the Earth's surface
                             //http://en.wikipedia.org/wiki/Trajectory_of_a_projectile#Notation
+    
+    double LOWBASKETY = .7112;
+    double MIDBASKETY = 1.549;
+    double TOPBASKETY = 2.489;
+    
+    double YOFFSET = -1.003/*shooter height*/ + .1524/*center backthing*/;
+    double XOFFSET = 0;
     
     AnalogChannel ultrasonic = new AnalogChannel(1);
     AnalogChannel potentiameter = new AnalogChannel(2);
     
-    Victor botPickup = new Victor(5);
-    Victor topPickup = new Victor(6);
+    Relay botPickup = new Relay(1);
+    Relay topPickup = new Relay(2);
     
-    Relay shooterRot = new Relay(1);
     Victor shooterT = new Victor(8);
     Victor shooterB = new Victor(9);
     
-    Relay arm = new Relay(2);
-    
+    Victor arm = new Victor(5);
+    Victor shootRot = new Victor(6);
+
     Joystick joy1 = new Joystick(1);
     Joystick joy2 = new Joystick(2);
     
@@ -58,39 +65,37 @@ public class mainRobot extends IterativeRobot {
         
         return d;
     }
-    public double v0(double x, double y, double theta, double g){
+    public double v(double x, double y, double theta, double g){
         
-        double v = 0;
+        double v;
         
-        v= -4 * ( 2*g*y - 2*g*x*Math.tan(theta)) * (((g*x*Math.tan(theta)) * (g*x*Math.tan(theta))) + g*g*x*x);
-        
-        if(v < 0)
-            return -1;
-        
-        v = Math.sqrt(v) / (2 *(2*y*g - 2*g*x*Math.tan(theta)));
-                
-        return v;
-    }
-    public double v1(double x, double y, double theta, double g){
-        
-        double v = 0;
-        
-        v= -4 * ( 2*g*y - 2*g*x*Math.tan(theta)) * (((g*x*Math.tan(theta)) * (g*x*Math.tan(theta))) + g*g*x*x);
+        v= -4 * ( 2*g*y - 2*Math.tan(theta)) * (g*g*x*x+Math.tan(theta)*Math.tan(theta));
         
         if(v < 0)
             return -1;
         
-        v = -Math.sqrt(v) / (2 *(2*y*g - 2*g*x*Math.tan(theta)));
-                
+        v = Math.sqrt(v) / (2 *(2*y*g - 2*Math.tan(theta)));
+        
+        if(v<0)
+            v = -v;
+        
         return v;
     }
-    
+    public double speedToPower(double speed){//meterspersecond.  Based on exponential regression and experiemental results.
+        return .160119* MathUtils.pow(1.2836555,speed);
+    }
+    public double calcShooterPower(double basket){
+        return speedToPower(v(getXDistance()+XOFFSET, basket + YOFFSET,THETA, G));
+    }
     /**
      * This function is run when the robot is first started up and should be
      * used for any initialization code.
      */
     public void robotInit() {
         getWatchdog().setEnabled(false);
+        botPickup.setDirection(Relay.Direction.kReverse);
+        topPickup.setDirection(Relay.Direction.kForward);
+        drive.arcadeDrive(joy1);
     }
 
     /**
@@ -109,30 +114,52 @@ public class mainRobot extends IterativeRobot {
         //double X2 = 0, Y1 = 0, X1 = 0, threshold = 15.0;
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
-            drive.arcadeDrive(joy1);
+            double selectedBasket = LOWBASKETY;
             
             if(-joy2.getY() > 0.0){
                 shooterT.set(-joy2.getY());
                 shooterB.set(-joy2.getY());
-            }
-            else{
+            } else if (joy2.getRawButton(8)) {
+                shooterT.set(calcShooterPower(LOWBASKETY));
+                shooterB.set(calcShooterPower(LOWBASKETY));   
+                selectedBasket = LOWBASKETY;
+            } else if (joy2.getRawButton(9)) {
+                shooterT.set(calcShooterPower(MIDBASKETY));
+                shooterB.set(calcShooterPower(MIDBASKETY));      
+                selectedBasket = MIDBASKETY;
+            } else if (joy2.getRawButton(10)) {
+                shooterT.set(calcShooterPower(TOPBASKETY));
+                shooterB.set(calcShooterPower(TOPBASKETY));     
+                selectedBasket = TOPBASKETY;
+            } else {
                 shooterT.set(0.0);
                 shooterB.set(0.0);
             }
-            if(joy2.getRawButton(2))
-                botPickup.set(-.5);
-            else if(joy2.getRawButton(3))
-                botPickup.set(-1.0);
+            if(joy2.getRawButton(3))
+                botPickup.set(Relay.Value.kOn);
             else
-                botPickup.set(0);
+                botPickup.set(Relay.Value.kOff);
             
+            if(joy2.getRawButton(6))
+                arm.set(0.5);
+            else if(joy2.getRawButton(7))
+                arm.set(-0.5);
+            else
+                arm.set(0.0);
             
+            shootRot.set(joy2.getX());
+                        
             if(joy2.getTrigger())
-                topPickup.set(1);
+                topPickup.set(Relay.Value.kOn);
             //else if(joy2.getRawButton(3))
               //  botPickup.set(1.0);
             else
-                topPickup.set(0);
+                topPickup.set(Relay.Value.kOff);
+            
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, "Pent:"+potentiameter.getVoltage());
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "Sonic:"+getXDistance());
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "CalcedPower:"+ calcShooterPower(selectedBasket));
+            DriverStationLCD.getInstance().updateLCD();
             
             //drive.tankDrive(joy1, joy2);
             /*
