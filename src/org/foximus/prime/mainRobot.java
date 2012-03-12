@@ -69,12 +69,12 @@ public class mainRobot extends IterativeRobot {
         
         double v;
         
-        v= -4 * ( 2*g*y - 2*Math.tan(theta)) * (g*g*x*x+Math.tan(theta)*Math.tan(theta));
+        v= -4 * ( 2*g*y - 2*x*g*Math.tan(theta)) * (g*g*x*x+g*g*x*x*Math.tan(theta)*Math.tan(theta));
         
         if(v < 0)
             return -1;
         
-        v = Math.sqrt(v) / (2 *(2*y*g - 2*Math.tan(theta)));
+        v = Math.sqrt(v) / (2 *(2*y*g - 2*g*x*Math.tan(theta)));
         
         if(v<0)
             v = -v;
@@ -82,10 +82,16 @@ public class mainRobot extends IterativeRobot {
         return v;
     }
     public double speedToPower(double speed){//meterspersecond.  Based on exponential regression and experiemental results.
-        return .160119* MathUtils.pow(1.2836555,speed);
+        return .08817160176329* MathUtils.pow(1.2861446832546,speed);
     }
     public double calcShooterPower(double basket){
-        return speedToPower(v(getXDistance()+XOFFSET, basket + YOFFSET,THETA, G));
+        double r = speedToPower(v(getXDistance()+XOFFSET, basket + YOFFSET,THETA, G));
+        
+        if(r > 1)
+            r = 1;
+        else if(r < 0)
+            r = 0;
+        return r;
     }
     /**
      * This function is run when the robot is first started up and should be
@@ -112,9 +118,11 @@ public class mainRobot extends IterativeRobot {
         //double magnitude, direction, rotation;
         //Create "deadzone" variables. Adjust threshold value to increase/decrease deadzone
         //double X2 = 0, Y1 = 0, X1 = 0, threshold = 15.0;
+        
+        double selectedBasket = LOWBASKETY;
+            
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
-            double selectedBasket = LOWBASKETY;
             
             if(-joy2.getY() > 0.0){
                 shooterT.set(-joy2.getY());
