@@ -36,7 +36,9 @@ public class mainRobot extends IterativeRobot {
     double MIDBASKETY = 1.549;
     double TOPBASKETY = 2.489;
     
+    double YTRIM = .5;
     double YOFFSET = -1.003/*shooter height*/ + .1524/*center backthing*/;
+    double XTRIM = 0;
     double XOFFSET = 0;
     
     AnalogChannel ultrasonic = new AnalogChannel(1);
@@ -85,7 +87,7 @@ public class mainRobot extends IterativeRobot {
         return .08817160176329* MathUtils.pow(1.2861446832546,speed);
     }
     public double calcShooterPower(double basket){
-        double r = speedToPower(v(getXDistance()+XOFFSET, basket + YOFFSET,THETA, G));
+        double r = speedToPower(v(getXDistance()+XOFFSET+XTRIM, basket + YOFFSET + YTRIM,THETA, G));
         
         if(r > 1)
             r = 1;
@@ -101,7 +103,6 @@ public class mainRobot extends IterativeRobot {
         getWatchdog().setEnabled(false);
         botPickup.setDirection(Relay.Direction.kReverse);
         topPickup.setDirection(Relay.Direction.kForward);
-        drive.arcadeDrive(joy1);
     }
 
     /**
@@ -123,6 +124,16 @@ public class mainRobot extends IterativeRobot {
             
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
+            drive.arcadeDrive(joy1);
+            
+            if(joy1.getRawButton(6))
+                XTRIM += .1;
+            else if(joy1.getRawButton(7))
+                XTRIM -= .1;
+            if(joy1.getRawButton(10))
+                YTRIM += .1;
+            else if(joy1.getRawButton(11))
+                YTRIM -= .1;
             
             if(-joy2.getY() > 0.0){
                 shooterT.set(-joy2.getY());
@@ -149,9 +160,9 @@ public class mainRobot extends IterativeRobot {
                 botPickup.set(Relay.Value.kOff);
             
             if(joy2.getRawButton(6))
-                arm.set(0.5);
+                arm.set(.35);
             else if(joy2.getRawButton(7))
-                arm.set(-0.5);
+                arm.set(-1);
             else
                 arm.set(0.0);
             
@@ -165,8 +176,8 @@ public class mainRobot extends IterativeRobot {
                 topPickup.set(Relay.Value.kOff);
             
             DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, "Pent:"+potentiameter.getVoltage());
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "Sonic:"+getXDistance());
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "CalcedPower:"+ calcShooterPower(selectedBasket));
+            //DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "Sonic:"+getXDistance());
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "XTRIM: "+ XTRIM + "YTRIM: " + YTRIM);
             DriverStationLCD.getInstance().updateLCD();
             
             //drive.tankDrive(joy1, joy2);
