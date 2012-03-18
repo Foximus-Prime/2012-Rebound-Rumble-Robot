@@ -40,7 +40,7 @@ public class mainRobot extends IterativeRobot {
     
     double YTRIM = 0;
     double YOFFSET = -1.003/*shooter height*/ + .1524/*center backthing*/;
-    double XTRIM = -.8;
+    double XTRIM = -1.5;
     double XOFFSET = 0;
     boolean trimStop = false;
     
@@ -158,7 +158,12 @@ public class mainRobot extends IterativeRobot {
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
             
-            drive.arcadeDrive(joy1.getY(), -joy1.getX());
+            if(joy1.getRawButton(2))
+                drive.arcadeDrive(.5*joy1.getY(), -.5 * joy1.getX());
+            else if(joy1.getRawButton(3))
+                drive.arcadeDrive(.45*joy1.getY(), -.45 * joy1.getX());
+            else
+                drive.arcadeDrive(joy1.getY(), -joy1.getX());
             
             if(trimStop < timer.get() && joy2.getRawButton(6)){
                 trimStop = timer.get() + .2;
@@ -208,7 +213,7 @@ public class mainRobot extends IterativeRobot {
             else
                 arm.set(0.0);
             
-            shootRot.set(.5*joy2.getX());
+            shootRot.set(.25*joy2.getX());
                         
             if(joy2.getTrigger())
                 topPickup.set(Relay.Value.kOn);
@@ -216,11 +221,11 @@ public class mainRobot extends IterativeRobot {
               //  botPickup.set(1.0);
             else
                 topPickup.set(Relay.Value.kOff);
-            
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, "Pent:"+potentiameter.getVoltage());
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser3, 1, "Sonic:"+getXDistance());
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "XTRIM: "+  XTRIM);
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser5, 1, "YTRIM: "+  YTRIM);
+        
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, " oo  Shooter Power:"+ calcShooterPower(selectedBasket));
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser3, 1, "<|>  Sonic:"+getXDistance());
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "_|/  XTRIM: "+  XTRIM);
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser5, 1, "     YTRIM: "+  YTRIM);
             DriverStationLCD.getInstance().updateLCD();
             
             //drive.tankDrive(joy1, joy2);
