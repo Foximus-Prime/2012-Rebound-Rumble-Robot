@@ -18,6 +18,8 @@ import edu.wpi.first.wpilibj.DriverStationLCD;
 import edu.wpi.first.wpilibj.GenericHID.Hand;
 import edu.wpi.first.wpilibj.Victor;
 import edu.wpi.first.wpilibj.AnalogChannel;
+import edu.wpi.first.wpilibj.camera.AxisCamera;
+import edu.wpi.first.wpilibj.Timer;
 
 /**
  * The VM is configured to automatically run this class, and to call the
@@ -36,10 +38,11 @@ public class mainRobot extends IterativeRobot {
     double MIDBASKETY = 1.549;
     double TOPBASKETY = 2.489;
     
-    double YTRIM = .5;
+    double YTRIM = 0;
     double YOFFSET = -1.003/*shooter height*/ + .1524/*center backthing*/;
-    double XTRIM = 0;
+    double XTRIM = -.8;
     double XOFFSET = 0;
+    boolean trimStop = false;
     
     AnalogChannel ultrasonic = new AnalogChannel(1);
     AnalogChannel potentiameter = new AnalogChannel(2);
@@ -103,13 +106,37 @@ public class mainRobot extends IterativeRobot {
         getWatchdog().setEnabled(false);
         botPickup.setDirection(Relay.Direction.kReverse);
         topPickup.setDirection(Relay.Direction.kForward);
+        trimStop = false;
     }
 
     /**
      * This function is called periodically during autonomous
      */
     public void autonomousPeriodic() {
-
+        Timer timer = new Timer();
+        
+        timer.start();
+        
+        int step = 0;
+        double tim = timer.get() + 2;
+        double tim2 = timer.get() + 4;
+        
+         while (true && isAutonomous() && isEnabled() ){             
+                shooterT.set(calcShooterPower(LOWBASKETY));
+                shooterB.set(calcShooterPower(LOWBASKETY));   
+                botPickup.set(Relay.Value.kOn);
+                if(timer.get() > tim && timer.get() < tim2){
+                    topPickup.set(Relay.Value.kOn);
+                }
+                else if (timer.get() > tim){
+                    tim += 4;
+                    tim2 += 4;                       
+                    topPickup.set(Relay.Value.kOff);
+                }
+                else
+                    topPickup.set(Relay.Value.kOff);
+                
+         }
     }
 
     /**
@@ -120,33 +147,48 @@ public class mainRobot extends IterativeRobot {
         //Create "deadzone" variables. Adjust threshold value to increase/decrease deadzone
         //double X2 = 0, Y1 = 0, X1 = 0, threshold = 15.0;
         
+        Timer timer = new Timer();
+        
+        timer.start();
+    
         double selectedBasket = LOWBASKETY;
+        
+        double trimStop = timer.get();
             
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
-            drive.arcadeDrive(joy1);
             
-            if(joy1.getRawButton(6))
-                XTRIM += .1;
-            else if(joy1.getRawButton(7))
-                XTRIM -= .1;
-            if(joy1.getRawButton(10))
-                YTRIM += .1;
-            else if(joy1.getRawButton(11))
-                YTRIM -= .1;
+            drive.arcadeDrive(joy1.getY(), -joy1.getX());
+            
+            if(trimStop < timer.get() && joy2.getRawButton(6)){
+                trimStop = timer.get() + .2;
+                XTRIM = XTRIM + .1;
+            }
+            else if(trimStop < timer.get() && joy2.getRawButton(7)){
+                trimStop = timer.get() + .2;
+                XTRIM = XTRIM - .1;
+            }
+            else if(trimStop < timer.get() && joy2.getRawButton(11)){
+                trimStop = timer.get() + .2;
+                YTRIM = YTRIM + .1;
+            }
+            else if(trimStop < timer.get() && joy2.getRawButton(10)){
+                trimStop = timer.get() + .2;
+                YTRIM = YTRIM - .1;
+            }
             
             if(-joy2.getY() > 0.0){
                 shooterT.set(-joy2.getY());
                 shooterB.set(-joy2.getY());
-            } else if (joy2.getRawButton(8)) {
+            } else if (joy2.getRawButton(4)) {
                 shooterT.set(calcShooterPower(LOWBASKETY));
                 shooterB.set(calcShooterPower(LOWBASKETY));   
                 selectedBasket = LOWBASKETY;
-            } else if (joy2.getRawButton(9)) {
+            } else if (joy2.getRawButton(3)) {
                 shooterT.set(calcShooterPower(MIDBASKETY));
                 shooterB.set(calcShooterPower(MIDBASKETY));      
                 selectedBasket = MIDBASKETY;
-            } else if (joy2.getRawButton(10)) {
+            } else if (joy2.getRawButton(5)) {
                 shooterT.set(calcShooterPower(TOPBASKETY));
                 shooterB.set(calcShooterPower(TOPBASKETY));     
                 selectedBasket = TOPBASKETY;
@@ -154,19 +196,19 @@ public class mainRobot extends IterativeRobot {
                 shooterT.set(0.0);
                 shooterB.set(0.0);
             }
-            if(joy2.getRawButton(3))
+            if(joy1.getTrigger() || joy2.getRawButton(2))
                 botPickup.set(Relay.Value.kOn);
             else
                 botPickup.set(Relay.Value.kOff);
             
-            if(joy2.getRawButton(6))
+            if(joy1.getRawButton(6) || joy2.getRawButton(8))
                 arm.set(.35);
-            else if(joy2.getRawButton(7))
+            else if(joy1.getRawButton(7) || joy2.getRawButton(9))
                 arm.set(-1);
             else
                 arm.set(0.0);
             
-            shootRot.set(joy2.getX());
+            shootRot.set(.5*joy2.getX());
                         
             if(joy2.getTrigger())
                 topPickup.set(Relay.Value.kOn);
@@ -176,8 +218,9 @@ public class mainRobot extends IterativeRobot {
                 topPickup.set(Relay.Value.kOff);
             
             DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, "Pent:"+potentiameter.getVoltage());
-            //DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "Sonic:"+getXDistance());
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "XTRIM: "+ XTRIM + "YTRIM: " + YTRIM);
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser3, 1, "Sonic:"+getXDistance());
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "XTRIM: "+  XTRIM);
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser5, 1, "YTRIM: "+  YTRIM);
             DriverStationLCD.getInstance().updateLCD();
             
             //drive.tankDrive(joy1, joy2);
