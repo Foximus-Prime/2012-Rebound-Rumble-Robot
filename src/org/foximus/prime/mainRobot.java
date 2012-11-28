@@ -40,9 +40,14 @@ public class mainRobot extends IterativeRobot {
     
     double YTRIM = 0;
     double YOFFSET = -1.003/*shooter height*/ + .1524/*center backthing*/;
-    double XTRIM = -1.5;
+    double XTRIM = .8;
     double XOFFSET = 0;
+    double calced = 0;
     boolean trimStop = false;
+    double armspeed = 1;
+    
+    boolean recalc = true;
+    boolean calib = false;
     
     AnalogChannel ultrasonic = new AnalogChannel(1);
     AnalogChannel potentiameter = new AnalogChannel(2);
@@ -118,19 +123,20 @@ public class mainRobot extends IterativeRobot {
         timer.start();
         
         int step = 0;
-        double tim = timer.get() + 2;
-        double tim2 = timer.get() + 4;
+        double tim = timer.get() + 2.5;
+        double tim2 = timer.get() + 5;
         
          while (true && isAutonomous() && isEnabled() ){             
-                shooterT.set(calcShooterPower(LOWBASKETY));
-                shooterB.set(calcShooterPower(LOWBASKETY));   
+               
+                shooterT.set(calcShooterPower(MIDBASKETY));
+                shooterB.set(calcShooterPower(MIDBASKETY));   
                 botPickup.set(Relay.Value.kOn);
                 if(timer.get() > tim && timer.get() < tim2){
                     topPickup.set(Relay.Value.kOn);
                 }
                 else if (timer.get() > tim){
-                    tim += 4;
-                    tim2 += 4;                       
+                    tim += 5;
+                    tim2 += 5;                       
                     topPickup.set(Relay.Value.kOff);
                 }
                 else
@@ -158,62 +164,92 @@ public class mainRobot extends IterativeRobot {
         while (true && isOperatorControl() && isEnabled()) // loop until change 
         {
             
-            if(joy1.getRawButton(2))
+            if(!joy1.getRawButton(8)){                
+                botPickup.setDirection(Relay.Direction.kReverse);
+                topPickup.setDirection(Relay.Direction.kForward);
+            }
+            else{
+                botPickup.setDirection(Relay.Direction.kForward);     
+                topPickup.setDirection(Relay.Direction.kReverse);           
+            }
+            
+            if(!calib){
+            if(joy1.getRawButton(10))
                 drive.arcadeDrive(.5*joy1.getY(), -.5 * joy1.getX());
-            else if(joy1.getRawButton(3))
-                drive.arcadeDrive(.45*joy1.getY(), -.45 * joy1.getX());
+            else if(joy1.getRawButton(11))
+                drive.arcadeDrive(.7*joy1.getY(), -.7 * joy1.getX());
             else
                 drive.arcadeDrive(joy1.getY(), -joy1.getX());
             
             if(trimStop < timer.get() && joy2.getRawButton(6)){
-                trimStop = timer.get() + .2;
+                trimStop = timer.get() + .1;
                 XTRIM = XTRIM + .1;
             }
             else if(trimStop < timer.get() && joy2.getRawButton(7)){
-                trimStop = timer.get() + .2;
+                trimStop = timer.get() + .1;
                 XTRIM = XTRIM - .1;
             }
-            else if(trimStop < timer.get() && joy2.getRawButton(11)){
-                trimStop = timer.get() + .2;
-                YTRIM = YTRIM + .1;
+            else if(trimStop < timer.get() && (joy2.getRawButton(11) || joy1.getRawButton(6))){
+                trimStop = timer.get() + .1;
+                armspeed = armspeed + .025;
             }
-            else if(trimStop < timer.get() && joy2.getRawButton(10)){
-                trimStop = timer.get() + .2;
-                YTRIM = YTRIM - .1;
+            else if(trimStop < timer.get() &&( joy2.getRawButton(10)  || joy1.getRawButton(7))){
+                trimStop = timer.get() + .1;
+                armspeed = armspeed - .025;
             }
             
             if(-joy2.getY() > 0.0){
                 shooterT.set(-joy2.getY());
                 shooterB.set(-joy2.getY());
             } else if (joy2.getRawButton(4)) {
-                shooterT.set(calcShooterPower(LOWBASKETY));
-                shooterB.set(calcShooterPower(LOWBASKETY));   
+                if(recalc){
+                    calced = calcShooterPower(LOWBASKETY);
+                    recalc = false;
+                }
+                shooterT.set(calced);
+                shooterB.set(calced);   
                 selectedBasket = LOWBASKETY;
             } else if (joy2.getRawButton(3)) {
-                shooterT.set(calcShooterPower(MIDBASKETY));
-                shooterB.set(calcShooterPower(MIDBASKETY));      
+                if(recalc){
+                    calced = calcShooterPower(MIDBASKETY);
+                    recalc = false;
+                }
+                shooterT.set(calced);
+                shooterB.set(calced);        
                 selectedBasket = MIDBASKETY;
             } else if (joy2.getRawButton(5)) {
-                shooterT.set(calcShooterPower(TOPBASKETY));
-                shooterB.set(calcShooterPower(TOPBASKETY));     
+                if(recalc){
+                    calced = calcShooterPower(TOPBASKETY);
+                    recalc = false;
+                }
+                shooterT.set(calced);
+                shooterB.set(calced);    
                 selectedBasket = TOPBASKETY;
+            } 
+            else if (joy1.getRawButton(9)) {
+                calced = 0;
+                recalc = true;
+                shooterT.set(calced);
+                shooterB.set(calced);    
             } else {
-                shooterT.set(0.0);
-                shooterB.set(0.0);
+                recalc = true;
+                shooterT.set(calced);
+                shooterB.set(calced);
             }
             if(joy1.getTrigger() || joy2.getRawButton(2))
                 botPickup.set(Relay.Value.kOn);
             else
                 botPickup.set(Relay.Value.kOff);
             
-            if(joy1.getRawButton(6) || joy2.getRawButton(8))
-                arm.set(.35);
-            else if(joy1.getRawButton(7) || joy2.getRawButton(9))
-                arm.set(-1);
-            else
-                arm.set(0.0);
+            if(joy1.getRawButton(3) || joy2.getRawButton(8))
+                arm.set(.25);
+            else if(joy1.getRawButton(2) || joy2.getRawButton(9))
+                arm.set(-armspeed);
+            else 
+                arm.stopMotor();
             
-            shootRot.set(.25*joy2.getX());
+            
+            shootRot.set(-.45*joy2.getX());
                         
             if(joy2.getTrigger())
                 topPickup.set(Relay.Value.kOn);
@@ -222,11 +258,67 @@ public class mainRobot extends IterativeRobot {
             else
                 topPickup.set(Relay.Value.kOff);
         
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, " oo  Shooter Power:"+ calcShooterPower(selectedBasket));
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, " oo  Shooter"+ calced); //joy2.getAxis(Joystick.AxisType.kThrottle));
             DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser3, 1, "<|>  Sonic:"+getXDistance());
             DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser4, 1, "_|/  XTRIM: "+  XTRIM);
-            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser5, 1, "     YTRIM: "+  YTRIM);
+            DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser5, 1, "  armspeed: "+  armspeed);
             DriverStationLCD.getInstance().updateLCD();
+            }
+            else {
+                
+                int foo = 2+2; //foo is 4
+                
+                if(joy1.getRawButton(2)){
+                    shooterT.set(calcShooterPower(.25));
+                    shooterB.set(calcShooterPower(.25));
+                }
+                else if(joy1.getRawButton(3)){
+                    shooterT.set(calcShooterPower(.35));
+                    shooterB.set(calcShooterPower(.35));
+                }
+                else if(joy1.getRawButton(4)){
+                    shooterT.set(calcShooterPower(.50));
+                    shooterB.set(calcShooterPower(.50));
+                }
+                else if(joy1.getRawButton(5)){
+                    shooterT.set(calcShooterPower(.65));
+                    shooterB.set(calcShooterPower(.65));
+                }
+                else if(joy1.getRawButton(6)){
+                    shooterT.set(calcShooterPower(.75));
+                    shooterB.set(calcShooterPower(.75));
+                }
+                else if(joy1.getRawButton(7)){
+                    shooterT.set(calcShooterPower(.85));
+                    shooterB.set(calcShooterPower(.85));
+                }
+                else if(joy1.getRawButton(8)){
+                    shooterT.set(calcShooterPower(.1));
+                    shooterB.set(calcShooterPower(.1));
+                }
+                else
+                    shooterT.set(0);
+                    shooterB.set(0);
+                }
+            
+                DriverStationLCD.getInstance().println(DriverStationLCD.Line.kUser2, 1, "Our team is good lookin'!!1!");
+           
+            
+            if(joy1.getTrigger() || joy2.getRawButton(2))
+                botPickup.set(Relay.Value.kOn);
+            else
+                botPickup.set(Relay.Value.kOff);
+            
+            
+            if(joy2.getTrigger())
+                topPickup.set(Relay.Value.kOn);
+            //else if(joy2.getRawButton(3))
+              //  botPickup.set(1.0);
+            else
+                topPickup.set(Relay.Value.kOff);
+    
+            
+            
             
             //drive.tankDrive(joy1, joy2);
             /*
